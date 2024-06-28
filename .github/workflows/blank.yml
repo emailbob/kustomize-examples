@@ -36,11 +36,12 @@ jobs:
 
       - name: Save kustomize build output for main branch
         run: |
-          find . -name kustomization.yaml -execdir kustomize build \; > /tmp/main-branch-output.yaml
+          find . -name kustomization.yaml -execdir kustomize build \; > main-branch-output.yaml
 
       - name: Show kustomize diff
         run: |
-          git diff --quiet --output kustomize-diff.txt -U10 /tmp/main-branch-output.yaml /tmp/feature-branch-output.yaml
+          mv /tmp/feature-branch-output.yaml ./feature-branch-output.yaml
+          git diff --quiet --output kustomize-diff.txt -U10 main-branch-output.yaml feature-branch-output.yaml
           cat kustomize-diff.txt
 
       - name: Post diff as PR comment
