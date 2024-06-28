@@ -28,6 +28,7 @@ jobs:
       - name: Save kustomize build output for feature branch
         run: |
           find . -name kustomization.yaml -execdir kustomize build \; > /tmp/feature-branch-output.yaml
+          cat /tmp/feature-branch-output.yaml
 
       - name: Checkout main branch
         run: |
@@ -37,6 +38,7 @@ jobs:
       - name: Save kustomize build output for main branch
         run: |
           find . -name kustomization.yaml -execdir kustomize build \; > main-branch-output.yaml
+          cat main-branch-output.yaml
 
       - name: Show kustomize diff
         run: |
