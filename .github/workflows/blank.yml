@@ -29,6 +29,17 @@ jobs:
       - name: Run a one-line script
         run: echo Hello, world!
 
+      - name: find kustomize files
+        run: find . -name kustomization.yaml
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/kustomize
+
+      - name: Verify kustomize installation
+        run: kustomize version
+      
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
