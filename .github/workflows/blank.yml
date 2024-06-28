@@ -1,10 +1,6 @@
-# This is a basic workflow to help you get started with Actions
+name: Kustomize Diff
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: [ "master" ]
   pull_request:
@@ -13,35 +9,35 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  kustomize-diff:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      - name: find kustomize files
-        run: find . -name kustomization.yaml
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Install kustomize
         run: |
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/kustomize
+          kustomize version
 
-      - name: Verify kustomize installation
-        run: kustomize version
-      
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Save kustomize build output for feature branch
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          find . -name kustomization.yaml -execdir kustomize build \; > feature-branch-output.yaml
+
+      - name: Checkout main branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Save kustomize build output for main branch
+        run: |
+          find . -name kustomization.yaml -execdir kustomize build \; > main-branch-output.yaml
+
+      - name: Show kustomize diff
+        run: |
+          diff main-branch-output.yaml feature-branch-output.yaml || true
