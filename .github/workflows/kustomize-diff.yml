@@ -29,6 +29,18 @@ jobs:
         run: |
           find . -name kustomization.yaml -execdir kustomize build \; > /tmp/feature-branch-output.yaml
 
+      - name: Save kustomize build output for feature branch per file
+        run: |
+          mkdir -p /tmp/feature
+          find . -name kustomization.yaml -execdir sh -c '
+            dir=$(pwd)
+            base_dir=$(basename "$dir")
+            if [ "$base_dir" != "." ]; then
+              output_file="/tmp/feature/${base_dir}.yaml"
+              kustomize build . > "$output_file"
+            fi
+          ' {} \;
+
       - name: Checkout main branch
         run: |
           git fetch origin main
@@ -38,10 +50,26 @@ jobs:
         run: |
           find . -name kustomization.yaml -execdir kustomize build \; > /tmp/main-branch-output.yaml
 
+      - name: Save kustomize build output for main branch per file
+        run: |
+          mkdir -p /tmp/main
+          find . -name kustomization.yaml -execdir sh -c '
+            dir=$(pwd)
+            base_dir=$(basename "$dir")
+            if [ "$base_dir" != "." ]; then
+              output_file="/tmp/main/${base_dir}.yaml"
+              kustomize build . > "$output_file"
+            fi
+          ' {} \;
+
       - name: Show kustomize diff
         run: |
           ### mv /tmp/feature-branch-output.yaml ./feature-branch-output.yaml
           diff -U10 /tmp/main-branch-output.yaml /tmp/feature-branch-output.yaml > kustomize-diff.txt || true
+
+      - name: Show kustomize diff folder
+        run: |
+          diff -bur /tmp/main /tmp/feature > kustomize-diff-dir.txt || true
 
       - name: Post diff as PR comment
         uses: actions/github-script@v6
@@ -77,5 +105,38 @@ jobs:
               });
             }
 
+      - name: Post diff as PR comment dir
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const diff = fs.readFileSync('kustomize-diff-dir.txt', 'utf8');
+            const issue_number = context.issue.number;
+            const commentIdentifier = "### Kustomize Diff Dir";
+            const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number
+            });
+
+            const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
+
+            if (comment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: comment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue_number,
+                body: body
+              });
+            }
 ### Update existing PR comment instead of creating a new one
 ### create mulitple kustomize files instead of one
