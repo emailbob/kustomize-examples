@@ -44,7 +44,6 @@ jobs:
           diff -U10 main-branch-output.yaml feature-branch-output.yaml > kustomize-diff.txt || true
 
       - name: Post diff as PR comment
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           script: |
