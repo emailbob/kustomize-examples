@@ -28,7 +28,6 @@ jobs:
       - name: Save kustomize build output for feature branch
         run: |
           find . -name kustomization.yaml -execdir kustomize build \; > /tmp/feature-branch-output.yaml
-          cat /tmp/feature-branch-output.yaml
 
       - name: Checkout main branch
         run: |
@@ -38,15 +37,11 @@ jobs:
       - name: Save kustomize build output for main branch
         run: |
           find . -name kustomization.yaml -execdir kustomize build \; > main-branch-output.yaml
-          cat main-branch-output.yaml
 
       - name: Show kustomize diff
         run: |
           mv /tmp/feature-branch-output.yaml ./feature-branch-output.yaml
-          diff --version
-          diff main-branch-output.yaml feature-branch-output.yaml > kustomize-diff.txt || true
-          ls -l
-          cat kustomize-diff.txt
+          diff -U10 main-branch-output.yaml feature-branch-output.yaml > kustomize-diff.txt || true
 
       - name: Post diff as PR comment
         if: github.event_name == 'pull_request'
@@ -64,15 +59,3 @@ jobs:
               issue_number: issue_number,
               body: body,
             });
-
-      - name: test
-        ##if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          script: |
-                  github.rest.issues.createComment({
-                    issue_number: context.issue.number,
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    body: '👋 Thanks for reporting!'
-                  })
