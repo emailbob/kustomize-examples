@@ -44,8 +44,8 @@ jobs:
         run: |
           mv /tmp/feature-branch-output.yaml ./feature-branch-output.yaml
           git diff --quiet --output kustomize-diff.txt -U10 main-branch-output.yaml feature-branch-output.yaml
+          ls -l
           cat kustomize-diff.txt
-          cat feature-branch-output.yaml
 
       - name: Post diff as PR comment
         if: github.event_name == 'pull_request'
