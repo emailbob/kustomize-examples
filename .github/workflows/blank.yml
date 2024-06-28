@@ -44,7 +44,24 @@ jobs:
           cat kustomize-diff.txt
 
       - name: Post diff as PR comment
-        #if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const diff = fs.readFileSync('kustomize-diff.txt', 'utf8');
+            const issue_number = context.issue.number;
+            const body = `### Kustomize Diff\n\`\`\`diff\n${diff}\n\`\`\``;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: body,
+            });
+
+      - name: test
+        ##if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           script: |
