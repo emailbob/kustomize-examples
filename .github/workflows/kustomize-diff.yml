@@ -34,12 +34,14 @@ jobs:
           mkdir -p /tmp/feature
           find . -name kustomization.yaml -execdir sh -c '
             dir=$(pwd)
+            mkdir -p $dir
             base_dir=$(basename "$dir")
             if [ "$base_dir" != "." ]; then
-              output_file="/tmp/feature/${base_dir}.yaml"
+              output_file="/tmp/feature/${dir}.yaml"
               kustomize build . > "$output_file"
             fi
           ' {} \;
+          ls -l /tmp/feature
 
       - name: Checkout main branch
         run: |
@@ -55,12 +57,14 @@ jobs:
           mkdir -p /tmp/main
           find . -name kustomization.yaml -execdir sh -c '
             dir=$(pwd)
+            mkdir -p $dir
             base_dir=$(basename "$dir")
             if [ "$base_dir" != "." ]; then
-              output_file="/tmp/main/${base_dir}.yaml"
+              output_file="/tmp/main/${dir}.yaml"
               kustomize build . > "$output_file"
             fi
           ' {} \;
+          ls -l /tmp/main
 
       - name: Show kustomize diff
         run: |
