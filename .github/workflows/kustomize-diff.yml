@@ -2,7 +2,7 @@ name: Kustomize Diff
 
 on:
   pull_request:
-  push:
+  # push:
   workflow_dispatch:
 
 permissions:
