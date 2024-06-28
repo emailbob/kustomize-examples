@@ -40,4 +40,5 @@ jobs:
 
       - name: Show kustomize diff
         run: |
-          diff main-branch-output.yaml feature-branch-output.yaml || true
+          git diff main-branch-output.yaml feature-branch-output.yaml > diff.txt
+          cat diff.txt
