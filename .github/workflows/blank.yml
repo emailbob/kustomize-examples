@@ -43,8 +43,9 @@ jobs:
       - name: Show kustomize diff
         run: |
           mv /tmp/feature-branch-output.yaml ./feature-branch-output.yaml
+          diff -y main-branch-output.yaml feature-branch-output.yaml
           diff --version
-          diff ./main-branch-output.yaml ./feature-branch-output.yaml > kustomize-diff.txt
+          diff main-branch-output.yaml feature-branch-output.yaml > kustomize-diff.txt
           ls -l
           cat kustomize-diff.txt
 
