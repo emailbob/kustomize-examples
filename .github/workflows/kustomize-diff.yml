@@ -51,6 +51,7 @@ jobs:
 
       - name: Save kustomize build output for main branch per file
         run: |
+          echo "root dir $(pwd)"
           find . -name kustomization.yaml -execdir sh -c '
             output_file="/tmp/main$(pwd)/kustomization.yaml"
             mkdir -p "/tmp/main$(pwd)"
