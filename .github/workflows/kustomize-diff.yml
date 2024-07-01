@@ -53,7 +53,7 @@ jobs:
       - name: Save kustomize build output for main branch per file
         run: |
           ORG_PATH=$(pwd)
-          find . -name kustomization.yaml -execdir sh -c '
+          find . -name kustomization.yaml -execdir bash -c '
             ORG_PATH="$1"
             FILE_DIR=$(pwd)
             echo "ORG_PATH: ${ORG_PATH} FILE_DIR: ${FILE_DIR}"
@@ -63,7 +63,7 @@ jobs:
             echo "FILE_PATH: ${FILE_PATH} output_file: ${output_file}"
             mkdir -p "/tmp/main${FILE_PATH}"
             kustomize build . > "$output_file"
-          ' sh "$ORG_PATH" \;
+          ' bash "$ORG_PATH" \;
 
       - name: Show kustomize diff
         run: |
