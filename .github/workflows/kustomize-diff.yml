@@ -51,17 +51,13 @@ jobs:
 
       - name: Save kustomize build output for main branch per file
         run: |
-          mkdir -p /tmp/main
           find . -name kustomization.yaml -execdir sh -c '
-            dir=$(pwd)
-            mkdir -p $dir
-            base_dir=$(basename "$dir")
-            if [ "$base_dir" != "." ]; then
-              output_file="/tmp/main/${dir}.yaml"
-              kustomize build . > "$output_file"
-            fi
+            output_file="/tmp/main$(pwd)/kustomization.yaml"
+            mkdir -p "/tmp/main$(pwd)"
+            kustomize build . > "$output_file"
+            echo "Output for $(pwd) saved to $output_file"
           ' {} \;
-          ls -l /tmp/main
+          ls -lR /tmp/main
 
       - name: Show kustomize diff
         run: |
