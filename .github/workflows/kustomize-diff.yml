@@ -27,21 +27,13 @@ jobs:
 
       - name: Save kustomize build output for feature branch
         run: |
-          find . -name kustomization.yaml -execdir kustomize build \; > /tmp/feature-branch-output.yaml
-
-      - name: Save kustomize build output for feature branch per file
-        run: |
-          ORG_PATH=$(pwd)
           find . -name kustomization.yaml -execdir bash -c '
             ORG_PATH="$1"
             FILE_DIR=$(pwd)
-            echo "ORG_PATH: ${ORG_PATH} FILE_DIR: ${FILE_DIR}"
             FILE_PATH=${FILE_DIR/$ORG_PATH}
-            output_file="/tmp/feature${FILE_PATH}/kustomization.yaml"
-
-            echo "FILE_PATH: ${FILE_PATH} output_file: ${output_file}"
+            OUTPUT_FILE="/tmp/feature${FILE_PATH}/kustomization.yaml"
             mkdir -p "/tmp/feature${FILE_PATH}"
-            kustomize build . > "$output_file"
+            kustomize build . > "$OUTPUT_FILE"
           ' bash "$(pwd)" \;
 
       - name: Checkout main branch
@@ -51,31 +43,19 @@ jobs:
 
       - name: Save kustomize build output for main branch
         run: |
-          find . -name kustomization.yaml -execdir kustomize build \; > /tmp/main-branch-output.yaml
-
-      - name: Save kustomize build output for main branch per file
-        run: |
-          ORG_PATH=$(pwd)
           find . -name kustomization.yaml -execdir bash -c '
             ORG_PATH="$1"
             FILE_DIR=$(pwd)
-            echo "ORG_PATH: ${ORG_PATH} FILE_DIR: ${FILE_DIR}"
             FILE_PATH=${FILE_DIR/$ORG_PATH}
-            output_file="/tmp/main${FILE_PATH}/kustomization.yaml"
-
-            echo "FILE_PATH: ${FILE_PATH} output_file: ${output_file}"
+            OUTPUT_FILE="/tmp/main${FILE_PATH}/kustomization.yaml"
             mkdir -p "/tmp/main${FILE_PATH}"
-            kustomize build . > "$output_file"
-          ' bash "$ORG_PATH" \;
+            kustomize build . > "$OUTPUT_FILE"
+          ' bash "$(pwd)" \;
+
 
       - name: Show kustomize diff
         run: |
-          ### mv /tmp/feature-branch-output.yaml ./feature-branch-output.yaml
-          diff -U10 /tmp/main-branch-output.yaml /tmp/feature-branch-output.yaml > kustomize-diff.txt || true
-
-      - name: Show kustomize diff folder
-        run: |
-          diff -bur /tmp/main /tmp/feature > kustomize-diff-dir.txt || true
+          diff -bur /tmp/main /tmp/feature > kustomize-diff.txt || true
 
       - name: Post diff as PR comment
         uses: actions/github-script@v6
@@ -83,40 +63,6 @@ jobs:
           script: |
             const fs = require('fs');
             const diff = fs.readFileSync('kustomize-diff.txt', 'utf8');
-            const issue_number = context.issue.number;
-            const commentIdentifier = "### Kustomize Diff";
-            const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number
-            });
-
-            const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
-
-            if (comment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: comment.id,
-                body: body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue_number,
-                body: body
-              });
-            }
-
-      - name: Post diff as PR comment dir
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const diff = fs.readFileSync('kustomize-diff-dir.txt', 'utf8');
             const issue_number = context.issue.number;
             const commentIdentifier = "### Kustomize Diff Dir";
             const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
@@ -144,5 +90,3 @@ jobs:
                 body: body
               });
             }
-### Update existing PR comment instead of creating a new one
-### create mulitple kustomize files instead of one
