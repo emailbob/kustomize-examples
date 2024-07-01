@@ -42,7 +42,7 @@ jobs:
             echo "Output for $(FILE_PATH) saved to $output_file"
           ' {} \;
           ls -l
-          ls -lR /tmp/feature
+          ls -lR
 
 
       - name: Checkout main branch
