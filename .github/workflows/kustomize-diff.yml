@@ -32,18 +32,12 @@ jobs:
       - name: Save kustomize build output for feature branch per file
         run: |
           ORG_PATH=$(pwd)
-          echo "ORG_PATH ${ORG_PATH}"
           find . -name kustomization.yaml -execdir sh -c '
             FILE_PATH=${ORG_PATH/$(pwd)}
-            echo "$(pwd) FILE_PATH $(FILE_PATH)"
             output_file="/tmp/feature/$(FILE_PATH)/kustomization.yaml"
             mkdir -p "/tmp/feature/$(FILE_PATH)"
             kustomize build . > "$output_file"
-            echo "Output for $(FILE_PATH) saved to $output_file"
           ' {} \;
-          ls -l
-          ls -lR
-
 
       - name: Checkout main branch
         run: |
@@ -56,14 +50,13 @@ jobs:
 
       - name: Save kustomize build output for main branch per file
         run: |
-          echo "root dir $(pwd)"
+          ORG_PATH=$(pwd)
           find . -name kustomization.yaml -execdir sh -c '
-            output_file="/tmp/main$(pwd)/kustomization.yaml"
-            mkdir -p "/tmp/main$(pwd)"
+            FILE_PATH=${ORG_PATH/$(pwd)}
+            output_file="/tmp/main/$(FILE_PATH)/kustomization.yaml"
+            mkdir -p "/tmp/main/$(FILE_PATH)"
             kustomize build . > "$output_file"
-            echo "Output for $(pwd) saved to $output_file"
           ' {} \;
-          ls -lR /tmp/main
 
       - name: Show kustomize diff
         run: |
