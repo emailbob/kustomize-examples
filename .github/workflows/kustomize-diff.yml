@@ -54,9 +54,9 @@ jobs:
         run: |
           ORG_PATH=$(pwd)
           find . -name kustomization.yaml -execdir sh -c '
-            #ORG_PATH="$1"
+            ORG_PATH="$1"
             echo "ORG_PATH: ${ORG_PATH} pwd: $(pwd)"
-            FILE_PATH=${$(pwd)/$ORG_PATH}
+            FILE_PATH=${(pwd)/$ORG_PATH}
             output_file="/tmp/main${FILE_PATH}/kustomization.yaml"
 
             echo "FILE_PATH: ${FILE_PATH} output_file: ${output_file}"
