@@ -32,11 +32,10 @@ jobs:
       - name: Save kustomize build output for feature branch per file
         run: |
           find . -name kustomization.yaml -execdir sh -c '
-            directory_path=$(dirname pwd)
-            output_file="/tmp/feature/${directory_path}/kustomization.yaml"
-            mkdir -p "/tmp/feature/${directory_path}"
+            output_file="/tmp/feature$(pwd)/kustomization.yaml"
+            mkdir -p "/tmp/feature$(pwd)"
             kustomize build . > "$output_file"
-            echo "Output for $directory_path saved to $output_file"
+            echo "Output for $(pwd) saved to $output_file"
           ' {} \;
           ls -lR /tmp/feature
 
