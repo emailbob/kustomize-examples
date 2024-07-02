@@ -62,31 +62,36 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const diff = fs.readFileSync('kustomize-diff.txt', 'utf8');
-            const issue_number = context.issue.number;
-            const commentIdentifier = "### Kustomize Diff Dir";
-            const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
+            const diff = fs.readFileSync('kustomize-diff.txt', 'utf8').trim();
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number
-            });
+            if (diff) {
+              const issue_number = context.issue.number;
+              const commentIdentifier = "### Kustomize Diff";
+              const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
 
-            const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
-
-            if (comment) {
-              await github.rest.issues.updateComment({
+              const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: comment.id,
-                body: body
+                issue_number: issue_number
               });
+
+              const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
+
+              if (comment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                  body: body
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue_number,
+                  body: body
+                });
+              }
             } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue_number,
-                body: body
-              });
+              console.log('No diff found, not creating or updating a comment.');
             }
