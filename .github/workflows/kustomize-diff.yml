@@ -25,6 +25,18 @@ jobs:
           sudo mv kustomize /usr/local/bin/kustomize
           kustomize version
 
+      - name: test
+        run: |
+          find . -name kustomization.yaml | grep -E '/(dev|stg|sec|prod)/' | xargs -I {} bash -c '
+            ORG_PATH="$1"
+            FILE_DIR=$(dirname "{}")
+            FILE_PATH=${FILE_DIR/$ORG_PATH}
+            OUTPUT_FILE="/tmp/feature${FILE_PATH}/kustomization.yaml"
+            mkdir -p "/tmp/feature${FILE_PATH}"
+            kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
+          ' bash "$(pwd)"
+          ls -l
+
       - name: Save kustomize build output for feature branch
         run: |
           find . -name kustomization.yaml -execdir bash -c '
