@@ -25,16 +25,6 @@ jobs:
           sudo mv kustomize /usr/local/bin/kustomize
           kustomize version
 
-      - name: test
-        run: |
-          find overlays -name kustomization.yaml | grep -E '/(dev|devops|stg|sec|prod)/' | while read -r kustomization_file; do
-            FILE_DIR=$(dirname "$kustomization_file")
-            echo "Checking: ${FILE_DIR}"
-            OUTPUT_FILE="/tmp/feature/${FILE_DIR}/kustomization.yaml"
-            mkdir -p "/tmp/feature/${FILE_DIR}"
-            kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
-          done
-
       - name: Save kustomize build output for feature branch
         run: |
           find overlays -name kustomization.yaml | grep -E '/(dev|devops|stg|sec|prod)/' | while read -r kustomization_file; do
