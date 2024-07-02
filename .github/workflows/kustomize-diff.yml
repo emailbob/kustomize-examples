@@ -27,11 +27,11 @@ jobs:
 
       - name: test
         run: |
-          find ./overlay -name kustomization.yaml | grep -E '/(dev|stg|sec|prod)/' | while read -r kustomization_file; do
-            FILE_DIR=$(dirname "$kustomization_file")
+          find overlays -name kustomization.yaml | grep -E '/(dev|devops|stg|sec|prod)/' | while read -r kustomization_file; do
+            FILE_DIR="/tmp/feature/$(dirname "$kustomization_file")""
             echo "FILE_DIR: ${FILE_DIR}"
-            OUTPUT_FILE="/tmp/feature${FILE_DIR}/kustomization.yaml"
-            mkdir -p "/tmp/feature${FILE_DIR}"
+            OUTPUT_FILE="${FILE_DIR}/kustomization.yaml"
+            mkdir -p "${FILE_DIR}"
             kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
             echo "OUTPUT_FILE: ${OUTPUT_FILE}"
           done
