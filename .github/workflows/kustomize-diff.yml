@@ -58,50 +58,40 @@ jobs:
           diff -bur /tmp/main /tmp/feature > kustomize-diff.txt || true
 
       - name: Post diff as PR comment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
-            import fs from 'fs/promises';
+            const fs = require('fs');
+            const diff = fs.readFileSync('kustomize-diff.txt', 'utf8').trim();
 
-            const run = async () => {
-              try {
-                const diff = (await fs.readFile('kustomize-diff.txt', 'utf8')).trim();
+            if (diff) {
+              const issue_number = context.issue.number;
+              const commentIdentifier = "### Kustomize Diff";
+              const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
 
-                if (diff) {
-                  const issue_number = context.issue.number;
-                  const commentIdentifier = "### Kustomize Diff";
-                  const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue_number
+              });
 
-                  const { data: comments } = await github.rest.issues.listComments({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number
-                  });
+              const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
 
-                  const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
-
-                  if (comment) {
-                    await github.rest.issues.updateComment({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      comment_id: comment.id,
-                      body
-                    });
-                  } else {
-                    await github.rest.issues.createComment({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number,
-                      body
-                    });
-                  }
-                } else {
-                  console.log('No diff found, not creating or updating a comment.');
-                }
-              } catch (error) {
-                console.error('Error reading diff file:', error);
+              if (comment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                  body: body
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue_number,
+                  body: body
+                });
               }
-            };
-
-            run();
-
+            } else {
+              console.log('No diff found, not creating or updating a comment.');
+            }
