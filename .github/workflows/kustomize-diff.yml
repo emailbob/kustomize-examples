@@ -34,8 +34,8 @@ jobs:
             echo "FILE_DIR: ${FILE_DIR}"
             echo "FILE_PATH: ${FILE_PATH}"
             echo "ORG_PATH: ${ORG_PATH}"
-            OUTPUT_FILE="/tmp/feature${FILE_PATH}/kustomization.yaml"
-            mkdir -p "/tmp/feature${FILE_PATH}"
+            OUTPUT_FILE="/tmp/feature${FILE_DIR}/kustomization.yaml"
+            mkdir -p "/tmp/feature${FILE_DIR}"
             kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
           done
           '
