@@ -1,31 +1,33 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-bases:
-- ../../base
 
 namespace: my-app-prod
 nameSuffix: -prod
 
-commonLabels:
-  foo: bar
 
-patchesStrategicMerge:
-- deployment_replicas.yaml
-- deployment_env.yaml
-- deployment_volume.yaml
 
 
 configMapGenerator:
-  - name: app-config
-    literals:
-      - username=prod-user
+- literals:
+  - username=prod-user
+  name: app-config
 
 secretGenerator:
-  - name: credentials
-    type: Opaque
-    literals:
-      - password=foo
-  - name: certs
-    files:
-      - assets/ca.pem
+- literals:
+  - password=foo
+  name: credentials
+  type: Opaque
+- files:
+  - assets/ca.pem
+  name: certs
+resources:
+- ../../base
+labels:
+- includeSelectors: true
+  pairs:
+    foo: bar
+patches:
+- path: deployment_replicas.yaml
+- path: deployment_env.yaml
+- path: deployment_volume.yaml

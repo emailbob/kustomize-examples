@@ -1,0 +1,111 @@
+name: Kustomize Diff
+
+on:
+  pull_request:
+  # push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  kustomize-diff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/kustomize
+          kustomize version
+
+      - name: Save kustomize build output for feature branch
+        run: |
+          find overlays -name kustomization.yaml | grep -E '/(dev|devops|stg|sec|prod)/' | while read -r kustomization_file; do
+            FILE_DIR=$(dirname "$kustomization_file")
+            echo "Checking: ${FILE_DIR}"
+            OUTPUT_FILE="/tmp/feature/${FILE_DIR}/kustomization.yaml"
+            mkdir -p "/tmp/feature/${FILE_DIR}"
+            kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
+          done
+          # find . -name kustomization.yaml -execdir bash -c '
+          #   ORG_PATH="$1"
+          #   FILE_DIR=$(pwd)
+          #   FILE_PATH=${FILE_DIR/$ORG_PATH}
+          #   OUTPUT_FILE="/tmp/feature${FILE_PATH}/kustomization.yaml"
+          #   mkdir -p "/tmp/feature${FILE_PATH}"
+          #   kustomize build . > "$OUTPUT_FILE"
+          # ' bash "$(pwd)" \;
+
+      - name: Checkout main branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Save kustomize build output for main branch
+        run: |
+          find overlays -name kustomization.yaml | grep -E '/(dev|devops|stg|sec|prod)/' | while read -r kustomization_file; do
+            FILE_DIR=$(dirname "$kustomization_file")
+            echo "Checking: ${FILE_DIR}"
+            OUTPUT_FILE="/tmp/main/${FILE_DIR}/kustomization.yaml"
+            mkdir -p "/tmp/main/${FILE_DIR}"
+            kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
+          done
+          # find . -name kustomization.yaml -execdir bash -c '
+          #   ORG_PATH="$1"
+          #   FILE_DIR=$(pwd)
+          #   FILE_PATH=${FILE_DIR/$ORG_PATH}
+          #   OUTPUT_FILE="/tmp/main${FILE_PATH}/kustomization.yaml"
+          #   mkdir -p "/tmp/main${FILE_PATH}"
+          #   kustomize build . > "$OUTPUT_FILE"
+          # ' bash "$(pwd)" \;
+
+
+      - name: Show kustomize diff
+        run: |
+          diff -bur /tmp/main /tmp/feature > kustomize-diff.txt || true
+
+      - name: Post diff as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const diff = fs.readFileSync('kustomize-diff.txt', 'utf8').trim();
+
+            if (diff) {
+              const issue_number = context.issue.number;
+              const commentIdentifier = "### Kustomize Diff";
+              const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue_number
+              });
+
+              const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
+
+              if (comment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                  body: body
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue_number,
+                  body: body
+                });
+              }
+            } else {
+              console.log('No diff found, not creating or updating a comment.');
+            }
