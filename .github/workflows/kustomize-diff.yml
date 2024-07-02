@@ -61,37 +61,47 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const fs = require('fs');
-            const diff = fs.readFileSync('kustomize-diff.txt', 'utf8').trim();
+            import fs from 'fs/promises';
 
-            if (diff) {
-              const issue_number = context.issue.number;
-              const commentIdentifier = "### Kustomize Diff";
-              const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
+            const run = async () => {
+              try {
+                const diff = (await fs.readFile('kustomize-diff.txt', 'utf8')).trim();
 
-              const { data: comments } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue_number
-              });
+                if (diff) {
+                  const issue_number = context.issue.number;
+                  const commentIdentifier = "### Kustomize Diff";
+                  const body = `${commentIdentifier}\n\`\`\`diff\n${diff}\n\`\`\``;
 
-              const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
+                  const { data: comments } = await github.rest.issues.listComments({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number
+                  });
 
-              if (comment) {
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: comment.id,
-                  body: body
-                });
-              } else {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue_number,
-                  body: body
-                });
+                  const comment = comments.find(comment => comment.user.type === 'Bot' && comment.body.startsWith(commentIdentifier));
+
+                  if (comment) {
+                    await github.rest.issues.updateComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: comment.id,
+                      body
+                    });
+                  } else {
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number,
+                      body
+                    });
+                  }
+                } else {
+                  console.log('No diff found, not creating or updating a comment.');
+                }
+              } catch (error) {
+                console.error('Error reading diff file:', error);
               }
-            } else {
-              console.log('No diff found, not creating or updating a comment.');
-            }
+            };
+
+            run();
+
