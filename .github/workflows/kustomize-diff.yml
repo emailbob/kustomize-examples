@@ -37,6 +37,7 @@ jobs:
             OUTPUT_FILE="/tmp/feature${FILE_DIR}/kustomization.yaml"
             mkdir -p "/tmp/feature${FILE_DIR}"
             kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
+            echo "OUTPUT_FILE: ${OUTPUT_FILE}"
           done
 
       - name: Save kustomize build output for feature branch
