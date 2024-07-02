@@ -27,15 +27,18 @@ jobs:
 
       - name: test
         run: |
-          find . -name kustomization.yaml | grep -E '/(dev|stg|sec|prod)/' | xargs -I {} bash -c '
-            ORG_PATH="$1"
-            FILE_DIR=$(dirname "{}")
+          ORG_PATH=$(pwd)
+          find . -name kustomization.yaml | grep -E '/(dev|stg|sec|prod)/' | while read -r kustomization_file; do
+            FILE_DIR=$(dirname "$kustomization_file")
             FILE_PATH=${FILE_DIR/$ORG_PATH}
+            echo "FILE_DIR: ${FILE_DIR}"
+            echo "FILE_PATH: ${FILE_PATH}"
+            echo "ORG_PATH: ${ORG_PATH}"
             OUTPUT_FILE="/tmp/feature${FILE_PATH}/kustomization.yaml"
             mkdir -p "/tmp/feature${FILE_PATH}"
             kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
-          ' bash "$(pwd)"
-          ls -R
+          done
+          '
 
       - name: Save kustomize build output for feature branch
         run: |
