@@ -35,7 +35,7 @@ jobs:
             mkdir -p "/tmp/feature${FILE_PATH}"
             kustomize build "$FILE_DIR" > "$OUTPUT_FILE"
           ' bash "$(pwd)"
-          ls -l
+          ls -l /tmp/feature
 
       - name: Save kustomize build output for feature branch
         run: |
